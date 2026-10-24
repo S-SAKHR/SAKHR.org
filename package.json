@@ -1,0 +1,127 @@
+// package.json
+{
+  "name": "sakhr-org",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "lucide-react": "^0.454.0",
+    "next": "14.2.16",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "prisma": "^5.20.0",
+    "@prisma/client": "^5.20.0",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.3"
+  }
+}
+
+
+// tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        sakhr: {
+          bg: "#071426",         // Main deep midnight blue
+          secondary: "#0B1F38",  // Secondary background
+          card: "#102945",       // Card surface
+          ice: "#D8ECFF",        // Light-blue high-contrast callout surface
+          navy: "#06111F",       // Dark navy headlines FOR USE ON LIGHT-BLUE SURFACES ONLY
+          electric: "#3185FF",   // Primary electric blue accent
+          cyan: "#42D9F5",       // Secondary luminous cyan accent
+          text: "#EAF2FF",       // Soft white primary text on dark surfaces
+          muted: "#A5B8D0",      // Muted slate-blue text
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-space)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
+      backgroundImage: {
+        "sakhr-radial":
+          "radial-gradient(circle at 50% 0%, rgba(49, 133, 255, 0.16) 0%, rgba(7, 20, 38, 0) 70%)",
+        "card-glow":
+          "linear-gradient(180deg, rgba(66, 217, 245, 0.06) 0%, rgba(16, 41, 69, 0) 100%)",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;
+
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #071426;
+  --bg-secondary: #0B1F38;
+  --bg-card: #102945;
+  --bg-ice-surface: #D8ECFF;
+  --text-dark-navy: #06111F;
+  --text-primary: #EAF2FF;
+  --text-muted: #A5B8D0;
+  --accent-primary: #3185FF;
+  --accent-secondary: #42D9F5;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #071426;
+  color: #EAF2FF;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Subtle custom scrollbar for desktop browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #071426;
+}
+::-webkit-scrollbar-thumb {
+  background: #102945;
+  border-radius: 4px;
+  border: 1px solid rgba(165, 184, 208, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3185FF;
+}
