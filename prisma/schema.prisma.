@@ -1,0 +1,232 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Visibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum WorkflowStage {
+  DRAFT
+  REVIEW
+  PUBLISHED
+}
+
+enum IdeaStatus {
+  SEED
+  EXPLORING
+  EXPERIMENTING
+  DEVELOPED
+}
+
+enum DisciplineCategory {
+  MEDICINE
+  NEUROSCIENCE
+  ARTIFICIAL_INTELLIGENCE
+  MACHINE_LEARNING
+  ROBOTICS
+  BIOENGINEERING
+  COMPUTER_SCIENCE
+  ALGORITHMS_DATA_STRUCTURES
+  MATHEMATICS
+  SCI_FI_INSPIRED_BY_SCIENCE
+}
+
+enum ArchiveItemType {
+  TEXT_NOTE
+  RESEARCH_SUMMARY
+  SCIENTIFIC_PAPER
+  UPLOADED_DOCUMENT
+  IMAGE_DIAGRAM
+  CODE_SNIPPET
+  PROJECT_DOC
+  AI_REPORT
+  PERSONAL_REFLECTION
+  EXTERNAL_RESOURCE
+}
+
+enum AgentStatus {
+  IDLE
+  RUNNING
+  AWAITING_APPROVAL
+  ERROR
+  UNCONFIGURED_DEMO
+}
+
+enum NodeEntityType {
+  IDEA
+  RESEARCH
+  ARCHIVE_ITEM
+  PROJECT
+  APPLICATION
+  AGENT
+}
+
+enum RelationshipType {
+  INSPIRES
+  EVIDENCES
+  MODELS
+  IMPLEMENTS
+  ANALYZES
+  EXTENDS
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          String    @default("ADMIN")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Idea {
+  id              String               @id @default(cuid())
+  slug            String               @unique
+  title           String
+  summary         String
+  fullExplanation String               @db.Text
+  status          IdeaStatus           @default(SEED)
+  categories      DisciplineCategory[]
+  references      Json?                // Structured array of citations/DOIs
+  visibility      Visibility           @default(PRIVATE)
+  workflowStage   WorkflowStage        @default(DRAFT)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([visibility, workflowStage])
+}
+
+model ResearchEntry {
+  id                        String               @id @default(cuid())
+  slug                      String               @unique
+  title                     String
+  researchQuestion          String
+  problemInvestigated       String               @db.Text
+  backgroundHistory         String               @db.Text
+  // Strict Epistemic Separation:
+  establishedEvidence       String               @db.Text // Peer-reviewed facts & verified data only
+  evidenceReferences        Json                 // Array of { pmid, doi, title, year, journal }
+  personalInterpretation    String               @db.Text // Analytical synthesis
+  speculativeHypotheses     String?              @db.Text // Clearly marked untested hypotheses
+  openQuestions             String[]
+  technologicalApplications String[]
+  categories                DisciplineCategory[]
+  visibility                Visibility           @default(PRIVATE)
+  workflowStage             WorkflowStage        @default(DRAFT)
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
+
+  @@index([visibility, workflowStage])
+}
+
+model ArchiveItem {
+  id              String               @id @default(cuid())
+  title           String
+  itemType        ArchiveItemType
+  content         String               @db.Text
+  fileStorageKey  String?              // S3/Object storage key for private/public files
+  externalUrl     String?
+  pmidOrDoi       String?
+  tags            String[]
+  categories      DisciplineCategory[]
+  visibility      Visibility           @default(PRIVATE)
+  workflowStage   WorkflowStage        @default(DRAFT)
+  // Prepared for Phase 6 pgvector RAG integration:
+  embeddingModel  String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([visibility, itemType])
+}
+
+model Project {
+  id                   String               @id @default(cuid())
+  slug                 String               @unique
+  title                String
+  category             String
+  problemStatement     String               @db.Text
+  motivation           String               @db.Text
+  scientificBackground String               @db.Text
+  proposedSolution     String               @db.Text
+  architectureWorkflow String               @db.Text
+  technologies         String[]
+  repositoryUrl        String?
+  status               String               @default("Active Prototype")
+  experimentsResults   String               @db.Text
+  futureImprovements   String[]
+  visibility           Visibility           @default(PRIVATE)
+  workflowStage        WorkflowStage        @default(DRAFT)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+}
+
+model ApplicationModule {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  name            String
+  description     String
+  iconName        String
+  integrationMode String        // INTERNAL_MODULE | EXTERNAL_WEB | MOBILE_API
+  status          String        // CONCEPT | IN_DEVELOPMENT | ALPHA | LIVE
+  launchUrl       String?
+  visibility      Visibility    @default(PUBLIC)
+  createdAt       DateTime      @default(now())
+}
+
+model Agent {
+  id            String              @id @default(cuid())
+  slug          String              @unique
+  name          String
+  roleTitle     String
+  purpose       String
+  capabilities  String[]
+  allowedTools  String[]
+  status        AgentStatus         @default(UNCONFIGURED_DEMO)
+  executionLogs AgentExecutionLog[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+}
+
+model AgentExecutionLog {
+  id               String   @id @default(cuid())
+  agentId          String
+  agent            Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  workflowRunId    String
+  stepOrder        Int
+  actionSummary    String
+  toolInvoked      String?
+  inputPayload     Json?
+  outputSummary    String?  @db.Text
+  status           String   // COMPLETED | AWAITING_USER_APPROVAL | FAILED | SIMULATED
+  requiresApproval Boolean  @default(false)
+  approvedByUserAt DateTime?
+  createdAt        DateTime @default(now())
+
+  @@index([workflowRunId, stepOrder])
+}
+
+// Unified Polymorphic Knowledge Graph Edge Table
+model KnowledgeEdge {
+  id           String           @id @default(cuid())
+  sourceType   NodeEntityType
+  sourceId     String
+  targetType   NodeEntityType
+  targetId     String
+  relationship RelationshipType
+  rationale    String?          // Explains WHY these two nodes are connected
+  createdAt    DateTime         @default(now())
+
+  @@unique([sourceType, sourceId, targetType, targetId, relationship])
+  @@index([sourceType, sourceId])
+  @@index([targetType, targetId])
+}
